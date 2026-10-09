@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+"""Call the Meshtool runtime admin API.
+
+Usage: runtime-call <METHOD> <PATH> ['<json-body>']
+Example: runtime-call GET /api/tenants
+Example: runtime-call POST /api/admin/grants/issue '{"tenant_id": "...", ...}'
+
+Auth: admin bearer key via the stored custom.runtime connector (surrogate
+exchange — this script never sees the key). Never print or persist it.
+"""
+import json
+import sys
+import urllib.request
+import urllib.error
+
+sys.path.insert(0, "/opt/hatch/skills/skill-creator/bin")
+from dynamic_credentials import add_surrogate_to_request, read_json_response
+
+HOST = "runtime.meshtool.ai"
+
+
+def main() -> None:
+    if len(sys.argv) < 3:
+        print("usage: runtime-call <METHOD> <PATH> ['<json-body>']",
+              file=sys.stderr)
+        sys.exit(2)
+    method = sys.argv[1].upper()
+    path = sys.argv[2]
+    if not path.startswith("/"):
+        path = "/" + path
+    body = None
+    if len(sys.argv) > 3:
+        try:
+            body = json.dumps(json.loads(sys.argv[3])).encode()
+        except json.JSONDecodeError as exc:
+            print(f"bad JSON body: {exc}", file=sys.stderr)
+            sys.exit(2)
+    req = urllib.request.Request(
+        f"https://{HOST}{path}",
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/126.0 Safari/537.36",
+            "Accept": "application/json",
+        },
+        method=method,
+    )
+    add_surrogate_to_request(req, "custom.runtime", allowed_hosts=[HOST])
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            print(json.dumps(read_json_response(resp), indent=2))
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", "replace")[:2000]
+        print(f"HTTP {exc.code}: {detail}", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
