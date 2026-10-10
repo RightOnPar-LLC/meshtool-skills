@@ -25,3 +25,8 @@ Each skill's `SKILL.md` explains authentication. Credentials live in your own va
 - DevDesk: https://devdesk.meshtool.ai — developer workstation.
 
 Built by RightOnPar LLC.
+
+## Related
+
+- [it-takes-skill](https://github.com/RightOnPar-LLC/it-takes-skill) (public) — the Skill OS framework these packs are built with.
+- [agent-skills](https://github.com/RightOnPar-LLC/agent-skills) (private) — the estate's operational skill shelf; new packs are built there first, then published here when ring-fence clean.
